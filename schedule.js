@@ -33,7 +33,7 @@ function updateStaffList() {
         staffLi.draggable = true;
         staffLi.dataset.index = index;
         staffLi.innerHTML = `
-            <span class="staff-name">${staff.name}</span>
+            <span class="staff-name" ondblclick="editStaffName(${index}, this)">${staff.name}</span>
             <select class="shift-select" onchange="updateStaffShift(${index}, 1, this.value)">
                 <option value="">選擇班次1</option>
                 <option value="${SHIFTS.DAY}" ${staff.shift1 === SHIFTS.DAY ? 'selected' : ''}>${SHIFTS.DAY}</option>
@@ -69,6 +69,35 @@ function updateStaffList() {
     });
     console.log('人員列表已更新');
     addDragListeners();
+}
+
+function editStaffName(index, element) {
+    const currentName = staffList[index].name;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentName;
+    input.className = 'edit-name-input';
+    
+    // 替換 span 為 input
+    element.parentNode.replaceChild(input, element);
+    input.focus();
+
+    // 當 input 失去焦點或按下 Enter 鍵時保存更改
+    input.addEventListener('blur', finishEdit);
+    input.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            finishEdit();
+        }
+    });
+
+    function finishEdit() {
+        const newName = input.value.trim();
+        if (newName && newName !== currentName) {
+            staffList[index].name = newName;
+            saveToLocalStorage();
+        }
+        updateStaffList();
+    }
 }
 
 function addDragListeners() {
