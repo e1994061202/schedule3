@@ -158,26 +158,49 @@ function displayStatistics(schedule) {
         staffStats[staff.name] = {
             [SHIFTS.DAY]: 0,
             [SHIFTS.EVENING]: 0,
-            [SHIFTS.NIGHT]: 0
+            [SHIFTS.NIGHT]: 0,
+            totalShifts: 0,
+            maxConsecutiveDays: 0,
+            vacationDays: 0,
+            consecutiveDays: 0
         };
     });
 
-    Object.values(schedule).forEach(day => {
-        Object.entries(day).forEach(([shift, staffOnShift]) => {
+    const daysInMonth = Object.keys(schedule).length;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        Object.entries(schedule[day]).forEach(([shift, staffOnShift]) => {
             staffOnShift.forEach(staffName => {
                 staffStats[staffName][shift]++;
+                staffStats[staffName].totalShifts++;
+                staffStats[staffName].consecutiveDays++;
+                
+                if (staffStats[staffName].consecutiveDays > staffStats[staffName].maxConsecutiveDays) {
+                    staffStats[staffName].maxConsecutiveDays = staffStats[staffName].consecutiveDays;
+                }
             });
         });
-    });
 
-    let statsHTML = '<table><tr><th>人員</th><th>白班</th><th>小夜</th><th>大夜</th><th>總班數</th></tr>';
-    Object.entries(staffStats).forEach(([staffName, shiftCounts]) => {
-        const totalShifts = Object.values(shiftCounts).reduce((a, b) => a + b, 0);
-        statsHTML += `<tr><td>${staffName}</td>`;
-        Object.values(shiftCounts).forEach(count => {
-            statsHTML += `<td>${count}</td>`;
+        // 計算休假天數
+        staffList.forEach(staff => {
+            if (!Object.values(schedule[day]).some(shiftStaff => shiftStaff.includes(staff.name))) {
+                staffStats[staff.name].vacationDays++;
+                staffStats[staff.name].consecutiveDays = 0;
+            }
         });
-        statsHTML += `<td>${totalShifts}</td></tr>`;
+    }
+
+    let statsHTML = '<table><tr><th>人員</th><th>白班</th><th>小夜</th><th>大夜</th><th>總班數</th><th>最多連續上班天數</th><th>休假天數</th></tr>';
+    Object.entries(staffStats).forEach(([staffName, stats]) => {
+        statsHTML += `<tr>
+            <td>${staffName}</td>
+            <td>${stats[SHIFTS.DAY]}</td>
+            <td>${stats[SHIFTS.EVENING]}</td>
+            <td>${stats[SHIFTS.NIGHT]}</td>
+            <td>${stats.totalShifts}</td>
+            <td>${stats.maxConsecutiveDays}</td>
+            <td>${stats.vacationDays}</td>
+        </tr>`;
     });
     statsHTML += '</table>';
 
